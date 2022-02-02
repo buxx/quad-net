@@ -103,11 +103,8 @@ function http_make_request(scheme, url, body, headers) {
         xhr.setRequestHeader(header, headers_obj[header]);
     }
     xhr.onload = function (e) {
-        if (this.status == 200) {
-            var uInt8Array = new Uint8Array(this.response);
-            
-            ongoing_requests[cid] = uInt8Array;
-        }
+        var uInt8Array = new Uint8Array(this.response);
+        ongoing_requests[cid] = uInt8Array;
     }
     xhr.onerror = function (e) {
         // todo: let rust know and put Error to ongoing requests
