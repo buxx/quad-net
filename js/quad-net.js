@@ -24,11 +24,11 @@ function ws_is_connected() {
 function ws_connect(addr) {
     quad_socket = new WebSocket(consume_js_object(addr));
     quad_socket.binaryType = 'arraybuffer';
-    quad_socket.onopen = function() {
+    quad_socket.onopen = function () {
         connected = 1;
     };
 
-    quad_socket.onmessage = function(msg) {
+    quad_socket.onmessage = function (msg) {
         if (typeof msg.data == "string") {
             received_buffer.push({
                 "text": 1,
@@ -65,14 +65,17 @@ function ws_try_recv() {
 
 var uid = 0;
 var ongoing_requests = {};
+var ongoing_statuses = {};
 
 function http_try_recv(cid) {
-    if (ongoing_requests[cid] != undefined && ongoing_requests[cid] != null) {
+    if (ongoing_requests[cid] != undefined && ongoing_requests[cid] != null && ongoing_statuses[cid] != undefined && ongoing_statuses[cid] != null) {
         var data = ongoing_requests[cid];
+        var status = ongoing_statuses[cid];
         ongoing_requests[cid] = null;
-        return js_object(data);
+        ongoing_statuses[cid] = null;
+        return [status, js_object(data)];
     }
-    return -1;
+    return [0, -1];
 }
 
 function http_make_request(scheme, url, body, headers) {
@@ -105,6 +108,7 @@ function http_make_request(scheme, url, body, headers) {
     xhr.onload = function (e) {
         var uInt8Array = new Uint8Array(this.response);
         ongoing_requests[cid] = uInt8Array;
+        ongoing_statuses[cid] = this.status;
     }
     xhr.onerror = function (e) {
         // todo: let rust know and put Error to ongoing requests

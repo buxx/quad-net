@@ -43,7 +43,7 @@ impl From<ureq::Error> for HttpError {
 #[cfg(target_arch = "wasm32")]
 extern "C" {
     fn http_make_request(scheme: i32, url: JsObject, body: JsObject, headers: JsObject) -> i32;
-    fn http_try_recv(cid: i32) -> JsObject;
+    fn http_try_recv(cid: i32) -> (u16, JsObject);
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -65,15 +65,15 @@ pub struct Request {
 
 #[cfg(target_arch = "wasm32")]
 impl Request {
-    pub fn try_recv(&mut self) -> Option<Result<String, HttpError>> {
-        let js_obj = unsafe { http_try_recv(self.cid) };
+    pub fn try_recv(&mut self) -> Option<Result<(u16, String), HttpError>> {
+        let (status_code, js_obj) = unsafe { http_try_recv(self.cid) };
 
         if js_obj.is_nil() == false {
             let mut buf = vec![];
             js_obj.to_byte_buffer(&mut buf);
 
             let res = std::str::from_utf8(&buf).unwrap().to_owned();
-            return Some(Ok(res));
+            return Some(Ok((status_code, res)));
         }
 
         None
